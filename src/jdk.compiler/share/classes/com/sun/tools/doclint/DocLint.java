@@ -26,6 +26,7 @@
 package com.sun.tools.doclint;
 
 import java.util.ServiceLoader;
+import java.util.stream.StreamSupport;
 
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.Plugin;
@@ -43,28 +44,53 @@ public abstract class DocLint implements Plugin {
     public static final String XMSGS_CUSTOM_PREFIX = "-Xmsgs:";
     public static final String XCHECK_PACKAGE = "-XcheckPackage:";
 
-    private static ServiceLoader.Provider<DocLint> docLintProvider;
+    private static ServiceLoader<DocLint> docLintLoader;
 
     public abstract boolean isValidOption(String opt);
 
     public static synchronized DocLint newDocLint() {
-        if (docLintProvider == null) {
-            docLintProvider = ServiceLoader.load(DocLint.class, ClassLoader.getSystemClassLoader()).stream()
-                    .filter(p_ -> p_.get().getName().equals("doclint"))
-                    .findFirst()
-                    .orElse(new ServiceLoader.Provider<>() {
-                        @Override
-                        public Class<? extends DocLint> type() {
-                            return NoDocLint.class;
-                        }
+        // if (docLintProvider == null) {
+            // docLintProvider = ServiceLoader.load(DocLint.class, ClassLoader.getSystemClassLoader()).stream()
+            //         .filter(p_ -> p_.get().getName().equals("doclint"))
+            //         .findFirst()
+            //         .orElse(new ServiceLoader.Provider<>() {
+            //             @Override
+            //             public Class<? extends DocLint> type() {
+            //                 return NoDocLint.class;
+            //             }
 
-                        @Override
-                        public DocLint get() {
-                            return new NoDocLint();
-                        }
-                    });
-        }
-        return docLintProvider.get();
+            //             @Override
+            //             public DocLint get() {
+            //                 return new NoDocLint();
+            //             }
+            //         });
+
+            Iterable<DocLint> providers =
+                    ServiceLoader.load(DocLint.class, ClassLoader.getSystemClassLoader());
+            return StreamSupport.stream(providers.spliterator(), false)
+                    .filter(p_ -> p_.getName().equals("doclint"))
+                    .findFirst()
+                    .orElse(new NoDocLint());
+                                                //  .flatMap(provider -> StreamSupport.stream(provider.getSupportedPlatformNames()
+                                                //                                                    .spliterator(),
+                                                //                                            false))
+                                                //  .collect(Collectors.toCollection(LinkedHashSet :: new));
+
+
+            // TODO(OBJ): ServiceLoader.stream() is not supported in Android
+            // docLintProvider = new ServiceLoader.Provider<>() {
+            //     @Override
+            //     public Class<? extends DocLint> type() {
+            //         return NoDocLint.class;
+            //     }
+
+            //     @Override
+            //     public DocLint get() {
+            //         return new NoDocLint();
+            //     }
+        // }
+    
+        // return docLintProvider.get();
     }
 
     private static class NoDocLint extends DocLint {

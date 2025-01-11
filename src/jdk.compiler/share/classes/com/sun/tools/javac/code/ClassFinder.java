@@ -462,6 +462,7 @@ public class ClassFinder {
             seen = CLASS_SEEN;
         else
             seen = SOURCE_SEEN;
+        Log.info("Loading file " + file.getName());
         String binaryName = fileManager.inferBinaryName(currentLoc, file);
         int lastDot = binaryName.lastIndexOf(".");
         Name classname = names.fromString(binaryName.substring(lastDot + 1));

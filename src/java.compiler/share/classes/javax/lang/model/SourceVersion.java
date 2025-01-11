@@ -259,10 +259,12 @@ public enum SourceVersion {
      * need to be updated accordingly.
      */
     private static SourceVersion getLatestSupported() {
-        int intVersion = Runtime.version().feature();
-        return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(17, intVersion)):
-            RELEASE_10;
+        // OBJ Compiler Change
+        // int intVersion = Runtime.version().feature();
+        // return (intVersion >= 11) ?
+        //     valueOf("RELEASE_" + Math.min(17, intVersion)):
+        //     RELEASE_10;
+        return latest();
     }
 
     /**

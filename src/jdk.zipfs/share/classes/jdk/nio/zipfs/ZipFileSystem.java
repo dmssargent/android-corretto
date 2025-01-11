@@ -1430,13 +1430,8 @@ class ZipFileSystem extends FileSystem {
      * Returns true if the Manifest main attribute "Multi-Release" is set to true; false otherwise.
      */
     private boolean isMultiReleaseJar() throws IOException {
-        try (InputStream is = newInputStream(getBytes("/META-INF/MANIFEST.MF"))) {
-            String multiRelease = new Manifest(is).getMainAttributes()
-                .getValue(Attributes.Name.MULTI_RELEASE);
-            return "true".equalsIgnoreCase(multiRelease);
-        } catch (NoSuchFileException x) {
-            return false;
-        }
+        // OBJ MODIFICATION
+        return false;
     }
 
     /**
@@ -3447,9 +3442,13 @@ class ZipFileSystem extends FileSystem {
             if (!(other instanceof IndexNode)) {
                 return false;
             }
+
+            // OBJ MODIFICATION
             byte[] oname = ((IndexNode)other).name;
-            return Arrays.equals(name, 0, len,
-                                 oname, 0, oname.length);
+            if (len != oname.length) {
+                return false;
+            }
+            return Arrays.equals(name, oname);
         }
     }
 }

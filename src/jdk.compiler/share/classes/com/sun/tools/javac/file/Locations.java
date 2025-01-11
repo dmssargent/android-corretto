@@ -364,10 +364,10 @@ public class Locations {
 
             if (!fsInfo.exists(file)) {
                 /* No such file or directory exists */
-                if (warn) {
+            
                     log.warning(Lint.LintCategory.PATH,
                                 Warnings.PathElementNotFound(file));
-                }
+            
                 super.add(file);
                 return;
             }
@@ -387,16 +387,13 @@ public class Locations {
                          it looks like a valid zip file. */
                         try {
                             FileSystems.newFileSystem(file, (ClassLoader)null).close();
-                            if (warn) {
                                 log.warning(Lint.LintCategory.PATH,
                                             Warnings.UnexpectedArchiveFile(file));
-                            }
                         } catch (IOException | ProviderNotFoundException e) {
                             // FIXME: include e.getLocalizedMessage in warning
-                            if (warn) {
                                 log.warning(Lint.LintCategory.PATH,
                                             Warnings.InvalidArchiveFile(file));
-                            }
+
                             return;
                         }
                     } else {
@@ -427,6 +424,7 @@ public class Locations {
                 for (Path f : fsInfo.getJarClassPath(jarFile)) {
                     addFile(f, warn);
                 }
+                log.info("Added " + jarFile + " to path");
             } catch (IOException e) {
                 log.error(Errors.ErrorReadingFile(jarFile, JavacFileManager.getMessage(e)));
             }
@@ -1967,7 +1965,9 @@ public class Locations {
                                     Collections.singletonMap("java.home", systemJavaHome.toString());
                             jrtfs = FileSystems.newFileSystem(jrtURI, attrMap);
                         } catch (ProviderNotFoundException ex) {
-                            URL javaHomeURL = systemJavaHome.resolve("jrt-fs.jar").toUri().toURL();
+                            URL javaHomeURL = systemJavaHome.resolve("lib").resolve("jrt-fs.jar").toUri().toURL();
+                    
+                        System.err.println("Testing jrt-fs.jar URL: " + javaHomeURL);
                             ClassLoader currentLoader = Locations.class.getClassLoader();
                             URLClassLoader fsLoader =
                                     new URLClassLoader(new URL[] {javaHomeURL}, currentLoader);
@@ -1984,7 +1984,7 @@ public class Locations {
                 } catch (FileSystemNotFoundException | ProviderNotFoundException e) {
                     modules = systemJavaHome.resolve("modules");
                     if (!Files.exists(modules))
-                        throw new IOException("can't find system classes", e);
+                        throw new IOException("can't find system classes " + e.getMessage(), e);
                 }
             }
 

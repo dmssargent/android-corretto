@@ -137,7 +137,8 @@ public class ModuleFinder {
                         try {
                             innerIter = fileManager.listLocationsForModules(outer).iterator();
                         } catch (IOException e) {
-                            System.err.println("error listing module locations for " + outer + ": " + e);  // FIXME
+                            System.err.println("error listing module locations for " + outer + ": " + e.getClass() + " msg: " + e);  // FIXME
+                            e.printStackTrace(System.err);
                         }
                     } else
                         return false;
