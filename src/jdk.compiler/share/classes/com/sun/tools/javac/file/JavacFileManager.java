@@ -1187,7 +1187,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     @Override @DefinedBy(Api.COMPILER)
     public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
         checkModuleOrientedOrOutputLocation(location);
-        return locations.listLocationsForModules(location);
+return locations.listLocationsForModules(location);
     }
 
     @Override @DefinedBy(Api.COMPILER)

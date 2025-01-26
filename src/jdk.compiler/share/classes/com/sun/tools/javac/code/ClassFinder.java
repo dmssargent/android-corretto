@@ -462,7 +462,7 @@ public class ClassFinder {
             seen = CLASS_SEEN;
         else
             seen = SOURCE_SEEN;
-        Log.info("Loading file " + file.getName());
+        // System.out.println("Loading file " + file.getName());
         String binaryName = fileManager.inferBinaryName(currentLoc, file);
         int lastDot = binaryName.lastIndexOf(".");
         Name classname = names.fromString(binaryName.substring(lastDot + 1));
@@ -704,7 +704,7 @@ public class ClassFinder {
     }
     // where
         @SuppressWarnings("fallthrough")
-        private void fillIn(PackageSymbol p,
+    private void fillIn(PackageSymbol p,
                             Location location,
                             Iterable<JavaFileObject> files)
         {

@@ -31,6 +31,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -424,7 +425,7 @@ public class Locations {
                 for (Path f : fsInfo.getJarClassPath(jarFile)) {
                     addFile(f, warn);
                 }
-                log.info("Added " + jarFile + " to path");
+                System.err.println("Added " + jarFile + " to path");
             } catch (IOException e) {
                 log.error(Errors.ErrorReadingFile(jarFile, JavacFileManager.getMessage(e)));
             }
@@ -1961,18 +1962,36 @@ public class Locations {
                         jrtfs = FileSystems.getFileSystem(jrtURI);
                     } else {
                         try {
-                            Map<String, String> attrMap =
-                                    Collections.singletonMap("java.home", systemJavaHome.toString());
+                            var attrMap = Collections.singletonMap("java.home", systemJavaHome.toString());
                             jrtfs = FileSystems.newFileSystem(jrtURI, attrMap);
                         } catch (ProviderNotFoundException ex) {
-                            URL javaHomeURL = systemJavaHome.resolve("lib").resolve("jrt-fs.jar").toUri().toURL();
-                    
-                        System.err.println("Testing jrt-fs.jar URL: " + javaHomeURL);
-                            ClassLoader currentLoader = Locations.class.getClassLoader();
-                            URLClassLoader fsLoader =
-                                    new URLClassLoader(new URL[] {javaHomeURL}, currentLoader);
+                            // System.err.println("Cannot find provider in here: " + ex.getMessage());
+                            // ex.printStackTrace(System.err);
 
-                            jrtfs = FileSystems.newFileSystem(jrtURI, Collections.emptyMap(), fsLoader);
+                            URL jrtFsJar = systemJavaHome.resolve("lib").resolve("jrt-fs.jar").toUri().toURL();
+
+                    
+                            // System.err.println("Testing jrt-fs.jar URL: " + jrtFsJar);
+                            ClassLoader currentLoader = Locations.class.getClassLoader();
+                            URLClassLoader fsLoader = new URLClassLoader(new URL[] {jrtFsJar}, currentLoader);
+
+                            Map<String, String> attrMap =
+                                    Collections.singletonMap("java.home", systemJavaHome.toString());
+
+                            try {
+                                jrtfs = FileSystems.newFileSystem(jrtURI, attrMap, fsLoader);
+                            } catch (ProviderNotFoundException ex3) {
+                                try {
+                                    System.setProperty("jrt.target.jdk", systemJavaHome.toString());
+                                    var jrtLoader = Class.forName("jdk.internal.jrtfs.JrtFileSystemProvider", true, fsLoader);
+                                    var jrtProvider = (FileSystemProvider) jrtLoader.getConstructor().newInstance(); 
+                                    jrtfs = jrtProvider.newFileSystem(jrtURI, Collections.emptyMap());
+                                    // jrtfs = FileSystems.newFileSystem(jrtURI, attrMap, fsLoader);
+                                } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ex2) {
+                                    // System.err.println("didn't find JrtProvider " + ex2);
+                                    throw new ProviderNotFoundException("jrt:/ not found");
+                                }
+                            }
 
                             closeables.add(fsLoader);
                         }
@@ -1982,6 +2001,8 @@ public class Locations {
 
                     modules = jrtfs.getPath("/modules");
                 } catch (FileSystemNotFoundException | ProviderNotFoundException e) {
+                    System.err.println("Falling back to the directory: " + e.getMessage());
+                    e.printStackTrace(System.err);
                     modules = systemJavaHome.resolve("modules");
                     if (!Files.exists(modules))
                         throw new IOException("can't find system classes " + e.getMessage(), e);

@@ -36,6 +36,7 @@ import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 
 import jdk.internal.jimage.ImageReader;
 import jdk.internal.jimage.ImageReader.Node;
@@ -110,9 +111,16 @@ abstract class SystemImage {
      * otherwise the JDK home is located relative to jrt-fs.jar.
      */
     private static String findHome() {
-        CodeSource cs = SystemImage.class.getProtectionDomain().getCodeSource();
-        if (cs == null)
-            return System.getProperty("java.home");
+        ProtectionDomain pd = SystemImage.class.getProtectionDomain();
+        CodeSource cs = pd == null ? null : pd.getCodeSource();
+        if (cs == null) {
+            String notDefined = "not_defined";
+            String jrtTarget = System.getProperty("jrt.target.jdk", notDefined);
+            if (jrtTarget.equals(notDefined)) {
+                return System.getProperty("java.home");
+            }
+            return jrtTarget;
+        }
 
         // assume loaded from $TARGETJDK/lib/jrt-fs.jar
         URL url = cs.getLocation();
